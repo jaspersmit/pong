@@ -1,0 +1,151 @@
+<html>
+
+<head>
+</head>
+
+<body>
+
+<canvas width="800" height="600" id="canvas">
+
+</canvas>
+
+<script>
+
+    var width = 800;
+    var height = 600;
+    var paddleSize = 100;
+    var paddleWidth = 100;
+    var paddleHeight = 10;
+    var paddle1 = width / 2 - paddleWidth / 2;
+    var paddle2 = width / 2 - paddleWidth / 2;
+    var ballSize = 10;
+    var ballX = width / 2 - ballSize / 2;
+    var ballY = height / 2 - ballSize / 2;
+
+    var ballVY = Math.random() < 0.5 ? 3 : -3;
+    var ballVX = 4 * Math.random() - 2;
+    var paddleWidth = 100;
+    var paddleVelocity = 6;
+
+    var leftDown = false;
+    var rightDown = false;
+
+    var prediction = 0;
+
+    function draw() {
+        var canvas = document.getElementById('canvas');
+        var context = canvas.getContext('2d');
+        context.fillStyle = 'black';
+        context.fillRect(0, 0, 800, 600);
+
+        context.fillStyle = 'red';
+        context.fillRect(prediction, paddleHeight, ballSize, ballSize);
+
+        context.fillStyle = 'white';
+        drawPaddle(context, paddle1, paddleHeight);
+        drawPaddle(context, paddle2, height - 2 * paddleHeight);
+
+        context.fillRect(ballX, ballY, ballSize, ballSize);
+
+
+    }
+
+    function drawPaddle(context, x, y) {
+        context.fillRect(x, y, paddleWidth, paddleHeight);
+    }
+
+    function predictVertical(x, y, vx, vy) {
+        var t = (2 * paddleHeight - y) / (vy);
+        return (vx) * t + x;
+    }
+
+    function predictHorizontal(x, y, vx, vy) {
+        if(Math.abs(vx) < 0.01 || vy > 0) {
+            return predictVertical(x, y, vx, vy);
+        }
+        t =
+            (vx > 0)
+            ? (width - x) / vx
+            : -x / vx;
+        var _y = vy * t + y;
+        if(_y <= 2 * paddleHeight) {
+            return predictVertical(x, y, vx, vy);
+        } else {
+            var _x = vx * t + x;
+            return predictHorizontal(_x, _y, -vx, vy);
+        }
+    }
+
+    function predict() {
+        prediction = predictHorizontal(ballX, ballY, ballVX, ballVY);
+    }
+
+
+    function tick() {
+        draw();
+
+        if(leftDown && !rightDown) {
+            paddle2 -= paddleVelocity;
+        }
+        if(!leftDown && rightDown) {
+            paddle2 += paddleVelocity;
+        }
+
+        var aiLeftDown = prediction < paddle1 + paddleWidth / 2 + 10;
+        var aiRightDown = prediction > paddle1 + paddleWidth / 2 - 10;
+
+        if(aiLeftDown && !aiRightDown) {
+            paddle1 -= paddleVelocity;
+        }
+        if(!aiLeftDown && aiRightDown) {
+            paddle1 += paddleVelocity;
+        }
+        
+        ballX += ballVX;
+        ballY += ballVY;
+
+        if(ballX <= 0 || ballX + ballSize >= width) {
+            ballVX = - ballVX;
+        }
+        if(ballY <= 0 || ballY + ballSize >= height) {
+            ballVX = 0;
+            ballY = height / 2 - ballSize / 2;
+        }
+
+        if(ballY <= 2 * paddleHeight && ballX + ballSize >= paddle1 && ballX < paddle1 + paddleWidth) {
+            ballVY = -ballVY;
+            ballVX = (ballX + ballSize / 2 - paddle1) / paddleWidth * 14 - 7;
+        }
+        if(ballY >= height - 2 * paddleHeight && ballX  + ballSize >= paddle2 && ballX < paddle2 + paddleWidth) {
+            ballVY = -ballVY;
+            ballVX = (ballX + ballSize / 2 - paddle2) / paddleWidth * 14 - 7;
+        }
+        predict();
+    }
+
+    setInterval(tick, 10);
+
+    var canvas = document.getElementById('canvas');
+    window.addEventListener('keydown', function(e) {
+        if(e.which == 65) {
+            leftDown = true;
+        } 
+        if(e.which == 68) {
+            rightDown = true;
+        } 
+    });
+    window.addEventListener('keyup', function(e) {
+        if(e.which == 65) {
+            leftDown = false;
+        } 
+        if(e.which == 68) {
+            rightDown = false;
+        } 
+    });
+
+
+</script>
+
+</body>
+
+</html>
