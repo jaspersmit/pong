@@ -1,6 +1,7 @@
 <html>
 
 <head>
+<script src="neural.js"></script>
 </head>
 
 <body>
@@ -10,6 +11,7 @@
 </canvas>
 
 <script>
+    var neural = new Neural(5, 3, 2);    
 
     var width = 800;
     var height = 600;
@@ -38,16 +40,11 @@
         context.fillStyle = 'black';
         context.fillRect(0, 0, 800, 600);
 
-        context.fillStyle = 'red';
-        context.fillRect(prediction, paddleHeight, ballSize, ballSize);
-
         context.fillStyle = 'white';
         drawPaddle(context, paddle1, paddleHeight);
         drawPaddle(context, paddle2, height - 2 * paddleHeight);
 
         context.fillRect(ballX, ballY, ballSize, ballSize);
-
-
     }
 
     function drawPaddle(context, x, y) {
@@ -94,10 +91,16 @@
         var aiLeftDown = prediction < paddle1 + paddleWidth / 2 + 10;
         var aiRightDown = prediction > paddle1 + paddleWidth / 2 - 10;
 
-        if(aiLeftDown && !aiRightDown) {
+        var neuralOutputs =
+        neural.eval([ballX, ballY, ballVX / 7, ballVY / 3, paddle1]);
+
+        aiLeftDown = neuralOutputs[0] > 0.5 && neuralOutputs[0] > neuralOutputs[1];
+        aiRightDown = neuralOutputs[1] > 0.5 && neuralOutputs[0] < neuralOutputs[1];
+
+        if(aiLeftDown && !aiRightDown && paddle1 > 0) {
             paddle1 -= paddleVelocity;
         }
-        if(!aiLeftDown && aiRightDown) {
+        if(!aiLeftDown && aiRightDown && paddle1 < width - paddleWidth) {
             paddle1 += paddleVelocity;
         }
         
