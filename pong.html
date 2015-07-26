@@ -36,7 +36,7 @@
     
     var trainingsData = [];
     var trainingsDataPointer = 0;
-    var learningRate = 0.2;
+    var learningRate = 0.1;
     var trainingSize = 1;
 
     function draw() {
@@ -157,13 +157,24 @@
             ballY = height / 2 - ballSize / 2;
         }
 
-        if(ballY <= 2 * paddleHeight && ballX + ballSize >= paddle1 && ballX < paddle1 + paddleWidth) {
+        if(ballY <= 2 * paddleHeight) {
             ballVY = -ballVY;
-            ballVX = (ballX + ballSize / 2 - paddle1) / paddleWidth * 14 - 7;
+            if(ballX + ballSize >= paddle1 && ballX < paddle1 + paddleWidth) {
+                ballVX = (ballX + ballSize / 2 - paddle1) / paddleWidth * 14 - 7;
+            } else {
+                ballVX = 0;
+                ballY = height / 2 - ballSize / 2;
+            }
         }
-        if(ballY >= height - 2 * paddleHeight && ballX  + ballSize >= paddle2 && ballX < paddle2 + paddleWidth) {
+        if(ballY >= height - 2 * paddleHeight) {
             ballVY = -ballVY;
-            ballVX = (ballX + ballSize / 2 - paddle2) / paddleWidth * 14 - 7;
+            if(ballX + ballSize >= paddle2 && ballX < paddle2 + paddleWidth) {
+                ballVX = (ballX + ballSize / 2 - paddle2) / paddleWidth * 14 - 7;
+            } else {
+                ballVX = 0;
+                ballY = height / 2 - ballSize / 2;
+
+            }
         }
         predict();
     }
