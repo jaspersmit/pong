@@ -11,7 +11,7 @@
 </canvas>
 
 <script>
-    var neural = new Neural(5, 3, 2);    
+    var neural = new Neural(6, 4, 2);    
 
     var width = 800;
     var height = 600;
@@ -33,12 +33,19 @@
     var rightDown = false;
 
     var prediction = 0;
+    
+    var trainingsData = [];
+    var trainingsDataPointer = 0;
+    var learningRate = 0.2;
+    var trainingSize = 1;
 
     function draw() {
         var canvas = document.getElementById('canvas');
         var context = canvas.getContext('2d');
         context.fillStyle = 'black';
         context.fillRect(0, 0, 800, 600);
+
+        drawError(context);
 
         context.fillStyle = 'white';
         drawPaddle(context, paddle1, paddleHeight);
@@ -54,6 +61,41 @@
     function predictVertical(x, y, vx, vy) {
         var t = (2 * paddleHeight - y) / (vy);
         return (vx) * t + x;
+    }
+
+    function getInputs() {
+        return [ballX / width, ballY / height, ballVX / 3, ballVY / 7, paddle1 / width, 1];
+    }
+
+    function collectTrainingsData() {
+        var inputs = getInputs();
+        
+        if(ballVY < 0) {
+            var aiLeftDown = prediction < paddle1 + paddleWidth / 2 + 10;
+            var aiRightDown = prediction > paddle1 + paddleWidth / 2 - 10;
+
+            var expectedOutput = [aiLeftDown ? 1 : 0, aiRightDown ? 1 : 0];
+            trainingsData[trainingsDataPointer] = [inputs, expectedOutput];
+            trainingsDataPointer = (trainingsDataPointer + 1) % trainingSize;
+        }
+
+        if(trainingsData.length > 0) {
+            var training = trainingsData[Math.floor(Math.random() * trainingsData.length)];
+            neural.train(training[0], training[1], learningRate);
+        }
+    }
+
+    function drawError(context) {
+        if(neural.errors.length < 800) return;
+        context.beginPath();
+        context.moveTo(0, 0);
+        for(var i = 0; i < 800; i++) {
+            var error = neural.errors[(neural.errorPointer + i) % 800];
+           context.lineTo(i, 600 - error * 300); 
+            //console.log(i + ', ' + (600 - error * 300));
+        }
+        context.strokeStyle = 'red';
+        context.stroke();
     }
 
     function predictHorizontal(x, y, vx, vy) {
@@ -91,11 +133,11 @@
         var aiLeftDown = prediction < paddle1 + paddleWidth / 2 + 10;
         var aiRightDown = prediction > paddle1 + paddleWidth / 2 - 10;
 
-        var neuralOutputs =
-        neural.eval([ballX, ballY, ballVX / 7, ballVY / 3, paddle1]);
+        var neuralOutputs = neural.eval(getInputs());
+        collectTrainingsData();
 
-        aiLeftDown = neuralOutputs[0] > 0.5 && neuralOutputs[0] > neuralOutputs[1];
-        aiRightDown = neuralOutputs[1] > 0.5 && neuralOutputs[0] < neuralOutputs[1];
+        aiLeftDown = neuralOutputs[0] > 0 && neuralOutputs[0] > neuralOutputs[1];
+        aiRightDown = neuralOutputs[1] > 0 && neuralOutputs[0] < neuralOutputs[1];
 
         if(aiLeftDown && !aiRightDown && paddle1 > 0) {
             paddle1 -= paddleVelocity;
